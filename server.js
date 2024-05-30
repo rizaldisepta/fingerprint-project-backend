@@ -37,19 +37,33 @@ app.post('/api/register', (req, res) => {
     // Extract email and fingerprint ID from the request body
     const { email, fingerprint } = req.body;
 
-    // Check if email and fingerprint ID are present in the request body
+    // Check if email is present in the request body
     if (!email) {
         return res.status(400).send('Email is required');
     }
 
-    // Insert the email and fingerprint ID into the database
-    const query = 'INSERT INTO users (email, fingerprint_id) VALUES (?, ?)';
-    db.query(query, [email, fingerprint], (err, result) => {
-        if (err) {
-            console.error('Error inserting email and fingerprint:', err);
-            return res.status(500).send('Error registering email and fingerprint');
+    // Check if the email already exists in the database
+    const checkQuery = 'SELECT * FROM users WHERE email = ?';
+    db.query(checkQuery, [email], (checkErr, checkResults) => {
+        if (checkErr) {
+            console.error('Error checking email:', checkErr);
+            return res.status(500).send('Error checking email');
         }
-        res.status(200).send('Email and fingerprint registered successfully');
+
+        // If email already exists, return an error
+        if (checkResults.length > 0) {
+            return res.status(400).send('Email already exists');
+        }
+
+        // Insert the email and fingerprint ID into the database
+        const insertQuery = 'INSERT INTO users (email, fingerprint_id) VALUES (?, ?)';
+        db.query(insertQuery, [email, fingerprint], (insertErr, result) => {
+            if (insertErr) {
+                console.error('Error inserting email and fingerprint:', insertErr);
+                return res.status(500).send('Error registering email and fingerprint');
+            }
+            res.status(200).send(result);
+        });
     });
 });
 
