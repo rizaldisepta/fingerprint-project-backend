@@ -62,25 +62,29 @@ app.post('/api/register', (req, res) => {
                 console.error('Error inserting email and fingerprint:', insertErr);
                 return res.status(500).send('Error registering email and fingerprint');
             }
-            res.status(200).send(result);
+            res.status(200).send('Success');
         });
     });
 });
 
 
 app.post('/api/check', (req, res) => {
-    const email = req.body.email;
-    const query = 'SELECT * FROM users WHERE email = ?';
-    db.query(query, [email], (err, results) => {
+    const fingerprint = req.body.fingerprint;
+
+    // Query the database to check if the fingerprint exists
+    const query = 'SELECT * FROM users WHERE fingerprint_id = ?';
+    db.query(query, [fingerprint], (err, results) => {
         if (err) {
-            console.error('Error checking email:', err);
-            res.status(500).send('Error checking email');
-            return;
+            console.error('Error checking fingerprint:', err);
+            return res.status(500).send('Error checking fingerprint');
         }
+
         if (results.length > 0) {
-            res.status(200).send(`Email ${email} is registered`);
+            // If the fingerprint exists, send the fingerprint_id and email in the response
+            const { email, fingerprint_id } = results[0];
+            return res.status(200).json({ email, fingerprint_id });
         } else {
-            res.status(404).send(`Email ${email} is not registered`);
+            return res.status(404).send('Fingerprint is not registered');
         }
     });
 });
